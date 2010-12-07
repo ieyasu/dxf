@@ -20,6 +20,8 @@ module DXF
         b.section 'HEADER' do
           b.group 9, '$ACADVER'
           b.group 1, 'AC1015'
+          b.group 9, '$CLAYER'
+          b.group 8, @entities.layer.name
         end
         @tables.write(b)
         @entities.write(b)
