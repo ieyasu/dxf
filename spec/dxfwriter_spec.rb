@@ -21,4 +21,25 @@ describe DXF::Writer do
     File.exist?(file).should be_true
     File.size(file).should > 0
   end
+
+  it "has layers with linetypes" do
+    file = "layers.dxf"
+    dw = DXF::Writer.new(file)
+    e = dw.entities
+
+    e.layer = DXF::Layer.new('First', DXF::Linetype.dashdot)
+    e.line(2, 2, 5, 8)
+
+    e.layer = DXF::Layer.new('Second', DXF::Linetype.center, :color => 2,
+                             :locked => true)
+    e.lwpolyline([[2,1], [1,4], [5,5], [6,2]])
+
+    e.layer = DXF::Layer.new('Third', DXF::Linetype.border, :color => 3,
+                             :visible => false, :frozen => true)
+    e.lwpolyline([[9,3], [7,5], [9,7], [11,5]], :close => true)
+
+    dw.finish
+    File.exist?(file).should be_true
+    File.size(file).should > 0
+  end
 end

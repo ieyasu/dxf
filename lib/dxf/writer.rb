@@ -1,36 +1,47 @@
 require 'dxf/builder'
+require 'dxf/tables'
 
 module DXF
   class Writer
+    attr_reader :tables
+    attr_reader :entities
+
     def initialize(io)
       @io = io.is_a?(IO) ? io : File.open(io, 'w')
-      @ew = DXF::EntitiesWriter.new
-    end
-
-    def entities
-      @ew
+      @tables = DXF::TablesWriter.new
+      @entities = DXF::EntitiesWriter.new
     end
 
     def finish
+      @tables.layers.entries = @entities.layers
+
       DXF::Builder.new(@io) do |b|
         b.group 999, 'DXF Ruby'
-        @ew.write(b)
+        b.section 'HEADER' do
+          b.group 9, '$ACADVER'
+          b.group 1, 'AC1015'
+        end
+        @tables.write(b)
+        @entities.write(b)
         b.group 0, 'EOF'
       end
     end
   end
 
   class EntitiesWriter
+    attr_accessor :layer
+
     def initialize
       @entities = []
+      @layer = DXF::Layer.default
     end
 
     def line(x1, y1, x2, y2, opts = nil)
-      @entities << DXF::Line.new(x1, y1, x2, y2, opts)
+      @entities << DXF::Line.new(@layer, x1, y1, x2, y2, opts)
     end
 
     def lwpolyline(points, opts = nil)
-      @entities << DXF::LWPolyLine.new(points, opts)
+      @entities << DXF::LWPolyLine.new(@layer, points, opts)
     end
 
     def write(b)
@@ -38,24 +49,39 @@ module DXF
         @entities.each { |e| e.write(b) }
       end
     end
+
+    def layers
+      @set = {}
+      @entities.each do |entity|
+        l = entity.layer
+        if @set.has_key?(l.name) && @set[l.name] != l
+          raise "Non-unique layer name: #{l.name.inspect}"
+        else
+          @set[l.name] = l
+        end
+      end
+      @set.values
+    end
   end
 
-  # name(-1) - may be opt
-  # layer(8), line weight (370)
   class Entity
-    def initialize(opts)
+    attr_reader :layer
+
+    def initialize(layer, opts)
+      @layer = layer
       @opts = opts.nil? ? {} : opts
     end
 
     def write(b)
       b.group 100, 'AcDbEntity'
       b.handle
+      b.group 8, @layer.name
     end
   end
 
   class Line < DXF::Entity
-    def initialize(x1, y1, x2, y2, opts = nil)
-      super(opts)
+    def initialize(layer, x1, y1, x2, y2, opts = nil)
+      super(layer, opts)
       @coords = [x1, y1, x2, y2]
     end
 
@@ -74,8 +100,8 @@ module DXF
   end
 
   class LWPolyLine < DXF::Entity
-    def initialize(points, opts = nil)
-      super(opts)
+    def initialize(layer, points, opts = nil)
+      super(layer, opts)
       @points = points
     end
 
