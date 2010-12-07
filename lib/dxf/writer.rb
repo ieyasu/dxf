@@ -39,21 +39,13 @@ module DXF
   # name(-1) - may be opt
   # layer(8), line weight (370)
   class Entity
-    @@handle = 0
-
-    def self.next_handle
-      @@handle += 1
-      sprintf "%x", @@handle
-    end
-
     def initialize(opts)
       @opts = opts.nil? ? {} : opts
-      @handle = Entity.next_handle
     end
 
     def write(b)
       b.group 100, 'AcDbEntity'
-      b.group 5, @handle
+      b.handle
     end
   end
 
