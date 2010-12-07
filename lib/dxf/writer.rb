@@ -29,6 +29,10 @@ module DXF
       @entities << DXF::Line.new(x1, y1, x2, y2, opts)
     end
 
+    def lwpolyline(points, opts = nil)
+      @entities << DXF::LWPolyLine.new(points, opts)
+    end
+
     def write(b)
       b.section 'ENTITIES' do |b|
         @entities.each { |e| e.write(b) }
@@ -66,6 +70,28 @@ module DXF
       b.group 11, @coords[2].to_f # x2
       b.group 21, @coords[3].to_f # y2
       b.group 31, 0.0             # z2
+    end
+  end
+
+  class LWPolyLine < DXF::Entity
+    def initialize(points, opts = nil)
+      super(opts)
+      @points = points
+    end
+
+    def write(b)
+      b.group 0, 'LWPOLYLINE'
+      super(b)
+      b.group 100, 'AcDbPolyline'
+      b.group 90, @points.size
+      polyline_flag = @opts[:close] ? 1 : 0
+      b.group 70, polyline_flag
+      # vertices
+      @points.each_with_index do |(x, y), n|
+        b.group 91, n
+        b.group 10, x
+        b.group 20, y
+      end
     end
   end
 end
