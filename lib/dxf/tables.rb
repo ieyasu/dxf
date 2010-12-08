@@ -1,5 +1,3 @@
-require 'dxf/builder'
-
 module DXF
   class TablesWriter
     attr_reader :layers

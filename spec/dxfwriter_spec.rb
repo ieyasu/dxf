@@ -22,6 +22,21 @@ describe DXF::Writer do
     File.size(file).should > 0
   end
 
+  it "draws curvy entities" do
+    file = "curvy.dxf"
+    dw = DXF::Writer.new(file)
+    e = dw.entities
+    e.circle(3, 3, 2)
+    e.arc(7, 3, 3, 10, 140)
+    e.point(7, 3)
+    e.ellipse(4, -1, -3, 1, 0.3)
+    e.point(10, 0)
+    e.ellipse(10, 0, 4, 0, 0.25, 90, 180)
+    dw.finish
+    File.exist?(file).should be_true
+    File.size(file).should > 0
+  end
+
   it "has layers with linetypes" do
     file = "layers.dxf"
     dw = DXF::Writer.new(file)
