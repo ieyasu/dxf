@@ -8,7 +8,7 @@ module DXF
     attr_reader :entities
 
     def initialize(io)
-      @io = io.is_a?(IO) ? io : File.open(io, 'w')
+      @io = io.respond_to?(:printf) ? io : File.open(io, 'w')
       @tables = DXF::TablesWriter.new
       @entities = DXF::EntitiesWriter.new
     end
